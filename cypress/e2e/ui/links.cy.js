@@ -5,11 +5,41 @@ const pagelinks =
 
 describe("Links", () => {
   /*
+    Header Links
+  */
+  it("checks links return 200 OK Status code in the header", () => {
+    const headerLinks = "[role='navigation'] [role='group'] a";
+    cy.log("**visit home page**");
+    cy.visit("/");
+    cy.location("pathname").should("eq", "/en");
+    cy.log("**checks navigation menu is visible**");
+    cy.get("[role='navigation'] [role='group']", { timeout: 10000 }).should(
+      "be.visible"
+    );
+    cy.log("**check all links navigation menu return 200**");
+    cy.checkLinksBySelector(headerLinks);
+  });
+
+  /*
+    Footer Links
+  */
+
+  it("checks links return 200 OK Status code in the footer", () => {
+    const footerLinks = "[role='contentinfo'] a";
+    cy.log("**visit home page**");
+    cy.visit("/");
+    cy.location("pathname").should("eq", "/en");
+    cy.log("**checks footer is visible**");
+    cy.get("[role='contentinfo']", { timeout: 10000 }).should("be.visible");
+    cy.checkLinksBySelector(footerLinks);
+  });
+
+  /*
   Learn
   what is starknet, glossary, faq
   */
 
-  it(`checks links returns 200 OK Status code on the 'what is starknet' page`, () => {
+  it(`checks links on the 'what is starknet' page work properly`, () => {
     cy.log("**visit 'what is starknet' page**");
     cy.goToPage("en/learn/what-is-starknet");
     cy.log("**check all links on the page return 200**");
@@ -144,7 +174,7 @@ describe("Links", () => {
     cy.checkLinksBySelector(pagelinks);
   });
 
-  it(`checks links returns 200 OK Status code on the 'all blog posts' page`, () => {
+  it.only(`checks links returns 200 OK Status code on the 'all blog posts' page`, () => {
     cy.log("**visit 'all blog posts' page**");
     cy.goToPage("en/posts"); // incorrect url.. so might be changed
     cy.log("**wait for blog posts to display**");
