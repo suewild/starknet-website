@@ -198,7 +198,7 @@ describe("Search", () => {
       .should("have.attr", "title", "Visit this link");
   });
 
-  it.only("checks posts contain 'visit this link' links", () => {
+  it("checks posts contain 'visit this link' links", () => {
     cy.log("**open search**");
     SearchPage.openSearch();
     cy.log("**checks search input is not empty**");
