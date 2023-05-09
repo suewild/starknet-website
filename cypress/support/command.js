@@ -1,5 +1,3 @@
-import "cypress-wait-until";
-
 /*
   disabling application errors to enable tests to run
 */
@@ -34,24 +32,13 @@ Cypress.on("uncaught:exception", (err, runnable) => {
 
 /* custom commands start here */
 
-Cypress.Commands.add("checkLinksBySelector", (selector) => {
+Cypress.Commands.add("verifyLinksStatusBySelector", (selector) => {
   cy.get(selector).each(($a) => {
     const href = $a.prop("href");
     if (href && !href.startsWith("mailto:")) {
       cy.request(href).its("status").should("eq", 200);
     }
   });
-});
-
-Cypress.Commands.add("checkLinksByCollectionFunc", (collectionFunc) => {
-  collectionFunc().each(($a) => {
-    const href = $a.prop("href");
-    cy.request(href).its("status").should("eq", 200);
-  });
-});
-
-Cypress.Commands.add("goToPage", (pagePath) => {
-  cy.visit(pagePath);
 });
 
 Cypress.Commands.add("checkImagesDisplay", () => {

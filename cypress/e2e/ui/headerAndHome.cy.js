@@ -1,6 +1,6 @@
 import {} from "../../support/command";
 
-describe("header", () => {
+describe("header and homepage", () => {
   beforeEach(() => {
     cy.log("**visit home page**");
     cy.visit("/");
@@ -44,5 +44,15 @@ describe("header", () => {
     cy.get(".chakra-popover__content").should("be.visible");
     cy.log("**checks 'Language Center' heading displays**");
     cy.contains("h6.chakra-heading", "Language Center").should("be.visible");
+  });
+
+  it("checks all images display", () => {
+    cy.log("**check all images display**");
+    cy.checkImagesDisplay();
+  });
+
+  it("checks all cards have a parent link", () => {
+    cy.log("**check all cards have a parent link**");
+    cy.get(".chakra-card").closest("a").should("have.class", "chakra-linkbox");
   });
 });

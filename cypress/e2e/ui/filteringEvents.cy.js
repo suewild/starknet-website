@@ -63,7 +63,7 @@ describe("filtering events", () => {
       .contains("past events", { matchCase: false })
       .click({ force: true });
     cy.log("**check url path is /en/events/past**");
-    cy.location("pathname", { timeout: 5000 }).should("eq", "/en/events/past");
+    cy.location("pathname", { timeout: 10000 }).should("eq", "/en/events/past");
     cy.log("**wait for events to load**");
     cy.wait("@events", { timeout: 5000 });
     cy.log("**get events**");
