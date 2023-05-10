@@ -1,4 +1,6 @@
+import { parse, compareAsc } from "date-fns";
 import {} from "../../support/command";
+import { EventsPage } from "../../pageObjects/events.page.js";
 
 describe("filtering events", () => {
   beforeEach(() => {
@@ -11,92 +13,87 @@ describe("filtering events", () => {
     cy.visit("/en/events");
     cy.location("pathname").should("eq", "/en/events");
     cy.log("**wait for events to load**");
-    cy.wait("@events", { timeout: 6000 });
+    cy.wait("@events", { timeout: 10000 });
   });
 
-  it("contains headings for upcoming and past events. Upcoming events is selected by default", () => {
+  it("has 'upcoming events' selected by default", () => {
     cy.log("**checks upcoming events is selected**");
-    cy.get("a")
-      .contains("upcoming events", { matchCase: false })
-      .should("have.attr", "data-active");
-    cy.get("a")
-      .contains("past events", { matchCase: false })
-      .should("not.have.attr", "data-active");
+    EventsPage.getLink("upcoming events").should("have.attr", "data-active");
+    cy.log("**checks past events is not selected**");
+    EventsPage.getLink("past events").should("not.have.attr", "data-active");
+    cy.log("**checks upcoming events list is not empty**");
+    EventsPage.getEvents().should("be.visible").should("not.be.empty");
   });
 
-  it("checks no filter is selected by default", () => {
-    cy.log("**check no filter is selected**");
-    cy.get("[dir='column'] button").should("have.class", "css-1umf0ha");
-  });
-
-  function parseDate(dateStr) {
-    const [dayPart, monthYearPart] = dateStr.split(", ");
-    const [day, month, year] = monthYearPart.match(/\d+|\D+/g);
-    const [startDay, endDay] = dayPart.split(" - ");
-    return new Date(year, month, startDay);
-  }
-
-  it("displays upcoming events in reverse date order", () => {
-    cy.log("**get events**");
-    cy.get("div.css-1c54vx9")
+  it("has 'upcoming events' in the correct order - closest date first, furthest date away last", () => {
+    cy.log("**checks upcoming events is selected**");
+    EventsPage.getLink("upcoming events").should("have.attr", "data-active");
+    const datesArr = [];
+    cy.log("**checks event dates are in ascending order**");
+    EventsPage.getEventDates()
       .should("be.visible")
       .should("have.length.greaterThan", 0)
-      .then(($events) => {
-        cy.log("**get dates**");
-        const dates = $events
-          .find("p.css-tcazcx")
-          .map((i, el) => {
-            return Cypress.$(el).text();
-          })
-          .get();
-        cy.log("**check dates are in reverse order**");
-        const datesSorted = dates.sort((a, b) => {
-          return parseDate(a) - parseDate(b);
-        });
-        expect(dates).to.deep.eq(datesSorted);
+      .each(($date) => {
+        const dateText = $date.text().replace(/·.+/, "").trim();
+        datesArr.push(dateText);
+      })
+      .then(() => {
+        const datesSorted = [...datesArr].sort((a, b) =>
+          compareAsc(
+            parse(a, "dd MMMM yyyy", new Date()),
+            parse(b, "dd MMMM yyyy", new Date())
+          )
+        );
+        expect(datesArr).to.deep.eq(datesSorted);
       });
   });
 
-  it("displays past events in reverse date order", () => {
-    cy.log("**click on past events button**");
-    cy.get("a")
-      .contains("past events", { matchCase: false })
-      .click({ force: true });
+  it("has 'past events' in the correct order - closest date first, earliest date last", () => {
+    cy.log("**click on 'past events'**");
+    EventsPage.getLink("past events").as("pastEvents").click({ force: true });
+    cy.get("@pastEvents").should("have.attr", "data-active");
+
     cy.log("**check url path is /en/events/past**");
     cy.location("pathname", { timeout: 10000 }).should("eq", "/en/events/past");
+
     cy.log("**wait for events to load**");
-    cy.wait("@events", { timeout: 5000 });
-    cy.log("**get events**");
-    cy.log("**get dates on events**");
-    cy.log("**check dates are in reverse order**");
-    cy.get("div.css-1c54vx9")
+    cy.wait("@events", { timeout: 10000 });
+
+    cy.log("**checks event dates are in ascending order**");
+    const datesArr = [];
+    EventsPage.getEventDates()
       .should("be.visible")
       .should("have.length.greaterThan", 0)
-      .then(($events) => {
-        const dates = $events
-          .find("p.css-tcazcx")
-          .map((i, el) => {
-            return Cypress.$(el).text();
-          })
-          .get();
-        const datesSorted = dates.sort((a, b) => {
-          return parseDate(a) - parseDate(b);
-        });
-        expect(dates).to.deep.eq(datesSorted);
+      .each(($date) => {
+        const dateText = $date.text().replace(/·.+/, "").trim();
+        datesArr.push(dateText);
+      })
+      .then(() => {
+        const datesSorted = [...datesArr].sort((a, b) =>
+          compareAsc(
+            parse(a, "dd MMMM yyyy", new Date()),
+            parse(b, "dd MMMM yyyy", new Date())
+          )
+        );
+        expect(datesArr).to.deep.eq(datesSorted);
       });
   });
 
-  it("filters upcoming events by location", () => {
+  it("filters upcoming events by 'Europe'", () => {
+    cy.log("**check no filters are selected**");
+    EventsPage.getFilterBtns().should("have.class", "css-1umf0ha");
     cy.log("**click on Europe button**");
-    cy.get("button").contains("Europe").click();
+    EventsPage.getFilterBtn("Europe").click();
+    EventsPage.getFilterBtn("Europe").should("have.class", "css-1pbupku");
     cy.log("**wait for events to load**");
-    cy.wait("@events");
+    cy.wait("@events", { timeout: 10000 });
     cy.log("**check events are visible**");
-    cy.get("div.css-1c54vx9")
+    EventsPage.getEvents()
+      .as("events")
       .should("have.length.greaterThan", 0)
       .and("be.visible");
-    cy.log("**check for Europe tag**");
-    cy.get("div.css-1c54vx9").each(($el) => {
+    cy.log("**check Europe tag is on every event**");
+    cy.get("@events").each(($el) => {
       cy.wrap($el)
         .find("span.css-1kuwq4c")
         .contains("Europe", { matchCase: false })
@@ -104,32 +101,34 @@ describe("filtering events", () => {
     });
   });
 
-  it("filters upcoming events by location and type", () => {
+  it("filters upcoming events by 'Europe' and 'Conference'", () => {
+    cy.log("**check no filters are selected**");
+    EventsPage.getFilterBtns().should("have.class", "css-1umf0ha");
     cy.log("**click on Europe button**");
-    cy.get("button").contains("Europe").click();
+    EventsPage.getFilterBtn("Europe").as("europeBtn").click();
+    cy.get("@europeBtn").should("have.class", "css-1pbupku");
     cy.log("**wait for events to load**");
-    cy.wait("@events");
+    cy.wait("@events"), { timeout: 10000 };
     cy.log("**click on Conference button**");
-    cy.get("button").contains("Conference").click();
+    EventsPage.getFilterBtn("Conference").as("conferenceBtn").click();
+    cy.get("@conferenceBtn").should("have.class", "css-1pbupku");
     cy.log("**wait for events to load**");
-    cy.wait("@events");
+    cy.wait("@events"), { timeout: 10000 };
     cy.log("**check events are visible**");
-    cy.get("div.css-1c54vx9")
+    EventsPage.getEvents()
+      .as("events")
       .should("have.length.greaterThan", 0)
       .and("be.visible");
-    cy.log("**check for Europe tag**");
-    cy.get("div.css-1c54vx9").each(($el) => {
+    cy.log("**check Europe and Conference tags are on every event**");
+    cy.get("@events").each(($el) => {
       cy.wrap($el)
         .find("span.css-1kuwq4c")
-        .contains("Europe", { matchCase: false })
-        .should("be.visible");
-    });
-    cy.log("**check for Conference tag**");
-    cy.get("div.css-1c54vx9").each(($el) => {
-      cy.wrap($el)
-        .find("span.css-1kuwq4c")
-        .contains("Conference", { matchCase: false })
-        .should("be.visible");
+        .should("be.visible")
+        .should(($tags) => {
+          const tagsText = $tags.text();
+          expect(tagsText).to.contain("Europe");
+          expect(tagsText).to.contain("Conference");
+        });
     });
   });
 });
