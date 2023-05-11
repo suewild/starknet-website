@@ -80,7 +80,7 @@ describe("in page navigation", () => {
       .within(() => {
         cy.get("a").trigger("mouseover").click({ force: true });
       });
-    cy.log("**checks the second 'on this page' link is activated**");
+    cy.log("**checks url hash contains expected text**");
     cy.location("hash", { timeout: 6000 }).should(
       "contain",
       "toc-how-it-works"

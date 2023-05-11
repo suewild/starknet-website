@@ -32,13 +32,15 @@ Cypress.on("uncaught:exception", (err, runnable) => {
 
 /* custom commands start here */
 
-Cypress.Commands.add("verifyLinksStatusBySelector", (selector) => {
-  cy.get(selector).each(($a) => {
-    const href = $a.prop("href");
-    if (href && !href.startsWith("mailto:")) {
-      cy.request(href).its("status").should("eq", 200);
-    }
-  });
+Cypress.Commands.add("testLinksReturn200", (selector, description) => {
+  cy.get(selector, { timeout: 10000 })
+    .should("exist")
+    .each(($a) => {
+      const href = $a.prop("href");
+      if (href && !href.startsWith("mailto:")) {
+        cy.request(href).its("status").should("eq", 200);
+      }
+    });
 });
 
 Cypress.Commands.add("checkImagesDisplay", () => {
