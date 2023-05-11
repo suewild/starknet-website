@@ -1,19 +1,19 @@
 import {} from "../../support/command";
 
-describe("header and homepage", () => {
+describe("header and footer", () => {
   beforeEach(() => {
     cy.log("**visit home page**");
     cy.visit("/");
     cy.log("**checks pathname contains default language**");
     cy.location("pathname").should("eq", "/en");
-    cy.log("**checks navigation menu is visible**");
-    cy.get("[role='navigation'] [role='group']", { timeout: 10000 }).should(
+    cy.log("**checks top navigation menu is visible**");
+    cy.get("div.chakra-button__group.css-kvp5xf", { timeout: 10000 }).should(
       "be.visible"
     );
     cy.log(
       "**checks header buttons are visible - search, color-mode, langauges**"
     );
-    cy.get("[role='navigation'] .chakra-stack.css-iew95a", {
+    cy.get("div.chakra-stack.css-iew95a", {
       timeout: 10000,
     }).should("be.visible");
   });
@@ -46,13 +46,11 @@ describe("header and homepage", () => {
     cy.contains("h6.chakra-heading", "Language Center").should("be.visible");
   });
 
-  it("checks all images display", () => {
-    cy.log("**check all images display**");
-    cy.checkImagesDisplay();
+  it("checks header links return 200", () => {
+    cy.testLinksReturn200("[role='navigation'] [role='group'] a", "header");
   });
 
-  it("checks all cards have a parent link", () => {
-    cy.log("**check all cards have a parent link**");
-    cy.get(".chakra-card").closest("a").should("have.class", "chakra-linkbox");
+  it("checks footer links return 200", () => {
+    cy.testLinksReturn200("[role='contentinfo'] a", "footer");
   });
 });

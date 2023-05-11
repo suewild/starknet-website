@@ -8,7 +8,12 @@ describe("Search", () => {
     cy.visit("/");
     cy.log("**check the page is loaded**");
     cy.location("pathname").should("eq", "/en");
-    cy.wait(2000); // need to wait for the search to display
+    cy.log(
+      "**checks header buttons are visible - search, color-mode, langauges**"
+    );
+    cy.get("div.chakra-stack.css-iew95a", {
+      timeout: 10000,
+    }).should("be.visible");
     cy.log("**peform search**");
     SearchPage.performSearch("cairo");
   });
