@@ -1,5 +1,4 @@
 import {} from "../../support/command";
-
 import { SearchPage } from "../../pageObjects/search.po";
 
 describe("Search", () => {

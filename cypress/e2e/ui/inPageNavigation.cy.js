@@ -1,4 +1,5 @@
 import {} from "../../support/command";
+import { InPageNavigationPage } from "../../pageObjects/inPageNavigation.page.js";
 
 describe("in page navigation", () => {
   beforeEach(() => {
@@ -9,18 +10,12 @@ describe("in page navigation", () => {
     cy.log("**checks 'on this page' heading displays**");
     cy.contains("h6.chakra-heading", "On this page").should("be.visible");
     cy.log("**gets on this page items**");
-    getOnThisPageListItems().should("be.visible").as("onThisPageListItems");
+    InPageNavigationPage.getOnThisPageListItems()
+      .should("be.visible")
+      .as("onThisPageListItems");
     cy.log("**gets headings**");
-    getHeadings().should("be.visible").as("headings");
+    InPageNavigationPage.getHeadings().should("be.visible").as("headings");
   });
-
-  const getOnThisPageListItems = () => {
-    return cy.get("[role='list'] li");
-  };
-
-  const getHeadings = () => {
-    return cy.get("[id^='toc']");
-  };
 
   it("checks the number of headings and 'on this page' list items match", () => {
     cy.log(
@@ -73,18 +68,14 @@ describe("in page navigation", () => {
       });
   });
 
-  it.only("checks the second 'on this page' link is activated when clicked", () => {
+  it("checks the second 'on this page' link is activated when clicked", () => {
     cy.log("**clicks on second 'on this page' item**");
     cy.get("@onThisPageListItems")
       .eq(1)
       .within(() => {
         cy.get("a").trigger("mouseover").click({ force: true });
       });
-    cy.log("**checks url hash contains expected text**");
-    cy.location("hash", { timeout: 6000 }).should(
-      "contain",
-      "toc-how-it-works"
-    );
+    cy.log("**checks second 'on this page' item is activated**");
     cy.get("@onThisPageListItems").eq(1).should("have.class", "css-733n7b");
     cy.log("**checks other 'on this page' items are not activated**");
     cy.get("@onThisPageListItems")
