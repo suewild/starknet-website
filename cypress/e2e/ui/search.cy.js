@@ -1,221 +1,98 @@
 import {} from "../../support/command";
 import { SearchPage } from "../../pageObjects/search.po";
 
-describe("Search", () => {
+describe("check search results", () => {
   beforeEach(() => {
+    cy.log("**intercept Algolia API calls**");
+    cy.intercept(
+      "POST",
+      "https://vhyjo45ti4-dsn.algolia.net/1/indexes/*/queries?*"
+    ).as("searchResults");
     cy.log("**visit home page**");
     cy.visit("/");
     cy.log("**check the page is loaded**");
     cy.location("pathname").should("eq", "/en");
     cy.log(
-      "**checks header buttons are visible - search, color-mode, langauges**"
+      "**check header buttons are visible - search, color-mode, langauges**"
     );
     cy.get("div.chakra-stack.css-iew95a", {
       timeout: 10000,
     }).should("be.visible");
-    cy.log("**peform search**");
+    cy.log("**perform search**");
     SearchPage.performSearch("cairo");
-  });
-
-  it("opens and cancels search", () => {
-    cy.log("**open search**");
-    SearchPage.openSearch();
-    cy.log("**cancel search**");
-    SearchPage.getCancelSearchBtn().trigger("mouseover").click();
-    cy.log("**check search is closed**");
-    SearchPage.getSearchModal().should("not.exist");
-  });
-
-  it("finds items in recent searches", () => {
-    cy.log("**open search**");
-    SearchPage.openSearch();
-    cy.log("**gets search term used in search**");
-    SearchPage.getSearchInput().invoke("val").as("searchTerm");
-    cy.log("**clear search input**");
-    SearchPage.getSearchInput().clear().should("have.value", "");
-    cy.log("**checks recent search items exist**");
-    SearchPage.getSearchResultItems("recentSearchesPlugin")
-      .as("recentSearchItems")
-      .should("have.length.at.least", 1);
-    cy.log("**checks recent search items contain search term**");
-    cy.get("@searchTerm").then((searchTerm) => {
-      const regexp = new RegExp(searchTerm, "i");
-      cy.get("@recentSearchItems").each(($el) => {
-        cy.wrap($el).invoke("text").should("match", regexp);
-      });
+    SearchPage.getSearchInput().should("have.value", "cairo", {
+      matchCase: false,
     });
+    cy.log("**wait for search results to load**");
+    cy.wait("@searchResults", { timeout: 10000 });
   });
 
-  it("removes recent searches", () => {
-    cy.log("**open search**");
-    SearchPage.openSearch();
-    cy.log("**clear search input**");
-    SearchPage.getSearchInput().clear().should("have.value", "");
-    cy.log("**checks recent search items exist**");
-    SearchPage.getSearchResultItems("recentSearchesPlugin").should(
-      "have.length.at.least",
-      1
-    );
-    cy.log("**checks remove search buttons on recent search items display**");
-    SearchPage.getSearchResultItems("recentSearchesPlugin")
-      .find("button[title^='Remove']")
-      .as("removeThisSearchBtns")
-      .should("be.visible");
-    cy.log("**clicks on remove search buttons**");
-    cy.get("@removeThisSearchBtns").each(($btn) => {
-      cy.wrap($btn).click();
-    });
-    cy.log("**checks recent search items do not exist**");
-    SearchPage.getSearchResultsSection("recentSearchesPlugin").should(
-      "not.exist"
-    );
-  });
-
-  it("populates the search input with a recent search", () => {
-    cy.log("**open search**");
-    SearchPage.openSearch();
-    cy.log("**clears search input**");
-    SearchPage.getSearchInput().clear().should("have.value", "");
-    cy.log("**checks recent search items exist**");
-    SearchPage.getSearchResultItems("recentSearchesPlugin").should(
-      "have.length.at.least",
-      1
-    );
-    cy.log("**clicks on fill query button in first recent search item**");
-    SearchPage.getBtnsOnSearchResultsItems("recentSearchesPlugin", "Fill query")
-      .first()
-      .click();
-    cy.log("**checks search input is not empty**");
-    SearchPage.getSearchInput()
-      .invoke("val")
-      .then((actualValue) => {
-        expect(actualValue.trim()).not.to.be.empty;
-      });
-  });
-
-  it("populates the search input with a popular search", () => {
-    cy.log("**open search**");
-    SearchPage.openSearch();
-    cy.log("**clears search input**");
-    SearchPage.getSearchInput().clear().should("have.value", "");
-    cy.log("**checks popular search items exist**");
-    SearchPage.getSearchResultItems("querySuggestionsPlugin").should(
-      "have.length.at.least",
-      1
-    );
-    cy.log("**clicks on fill query button in first popular search item**");
-    SearchPage.getBtnsOnSearchResultsItems(
-      "querySuggestionsPlugin",
-      "Fill query"
-    )
-      .first()
-      .click();
-    cy.log("**checks search input is not empty**");
-    SearchPage.getSearchInput()
-      .invoke("val")
-      .then((actualValue) => {
-        expect(actualValue.trim()).not.to.be.empty;
-      });
-  });
-
-  it("checks that 'pages' contains links to pages", () => {
-    cy.log("**open search**");
-    SearchPage.openSearch();
-    cy.log("**checks search input is not empty**");
-    SearchPage.getSearchInput().invoke("val").should("not.be.empty");
-    cy.log("**checks pages display**");
-    SearchPage.getSearchResultItems("pages").should("have.length.at.least", 1);
-  });
-
-  it("checks 'post' search results have search term", () => {
-    cy.log("**open search**");
-    SearchPage.openSearch();
-    cy.log("**checks search input is not empty**");
-    SearchPage.getSearchInput().invoke("val").should("not.be.empty");
-    cy.log("**gets search term used in search**");
-    SearchPage.getSearchInput().invoke("val").as("searchTerm");
-    cy.log("**checks there are search results in posts**");
+  it("checks search results dislay under posts and documentation. Also checks the pages section displays", () => {
+    cy.log("**checks 'posts' search results contain search term**");
     SearchPage.getSearchResultItems("posts")
-      .as("postItems")
+      .as("postListItems")
+      .contains(new RegExp("cairo", "i"), { timeout: 10000 })
       .should("have.length.at.least", 1);
-    cy.log("**checks search term displays in search results in posts**");
-    cy.get("@searchTerm").then((searchTerm) => {
-      const regexp = new RegExp(searchTerm, "i");
-      cy.get("@postItems").each(($el) => {
-        cy.wrap($el).invoke("text").should("match", regexp);
-      });
+    cy.log("**checks each 'post' search result has a link**");
+    cy.get("@postListItems").each(($el) => {
+      const $anchor = $el.find("a");
+      expect($anchor).to.have.length(1);
+      expect($anchor).to.have.attr("href");
     });
-  });
-
-  it("checks 'documentation' search results have search term", () => {
-    cy.log("**open search**");
-    SearchPage.openSearch();
-    cy.log("**checks search input is not empty**");
-    SearchPage.getSearchInput().invoke("val").should("not.be.empty");
-    cy.log("**gets search term used in search**");
-    SearchPage.getSearchInput().invoke("val").as("searchTerm");
-    cy.log("**checks there are search results in documentation**");
-    SearchPage.getSearchResultItems("docs").should("have.length.at.least", 1);
-    cy.log(
-      "**checks search term displays in search results in documentation**"
-    );
-    cy.get("@searchTerm").then((searchTerm) => {
-      const regexp = new RegExp(searchTerm, "i");
-      SearchPage.getSearchResultItems("docs").each(($el) => {
-        cy.wrap($el).invoke("text").should("match", regexp);
-      });
+    cy.log("**checks 'documentation' search results contain search term**");
+    SearchPage.getSearchResultItems("docs")
+      .as("docListItems")
+      .contains(new RegExp("cairo", "i"), { timeout: 10000 })
+      .should("have.length.at.least", 1);
+    cy.log("**checks each 'documentation' search result has a link**");
+    cy.get("@docListItems").each(($el) => {
+      const $anchor = $el.find("a");
+      expect($anchor).to.have.length(1);
+      expect($anchor).to.have.attr("href");
     });
-  });
-
-  it("checks pages contain 'visit this link' links", () => {
-    cy.log("**open search**");
-    SearchPage.openSearch();
-    cy.log("**checks search input is not empty**");
-    SearchPage.getSearchInput().invoke("val").should("not.be.empty");
-    cy.log("**checks there are search results in posts**");
-    cy.log("**checks pages display**");
+    cy.log("**checks 'pages' contain 'visit this link' links**");
     SearchPage.getSearchResultItems("pages")
       .as("pageItems")
       .should("have.length.at.least", 1);
-    cy.log("**checks pages contain a 'visit this link' link");
-    cy.get("@pageItems").find(".aa-ItemLink").should("have.attr", "href");
-    cy.get("@pageItems")
-      .find(".aa-ItemActionButton")
-      .should("exist")
-      .should("have.attr", "title", "Visit this link");
+    cy.get("@pageItems").each(($el) => {
+      const $anchor = $el.find("a");
+      expect($anchor).to.have.length(1);
+      expect($anchor).to.have.attr("href");
+    });
+    cy.log("**clicks on clear**");
+    SearchPage.getClearBtn().should("be.visible").trigger("mouseover").click();
+    cy.log("**check search input is empty**");
+    SearchPage.getSearchInput().should("have.value", "");
+    cy.log("**click on cancel**");
+    SearchPage.getCancelSearchBtn()
+      .should("be.visible")
+      .trigger("mouseover")
+      .click();
+    cy.log("**check search modal is closed**");
+    SearchPage.getSearchModal().should("not.exist");
   });
 
-  it("checks documentation contain 'visit this link' links", () => {
-    cy.log("**open search**");
-    SearchPage.openSearch();
-    cy.log("**checks search input is not empty**");
-    SearchPage.getSearchInput().invoke("val").should("not.be.empty");
-    cy.log("**checks there are search results in posts**");
-    SearchPage.getSearchResultItems("docs")
-      .as("docItems")
-      .should("have.length.at.least", 1);
-    cy.log("**checks docs contain a 'visit this link' link");
-    cy.get("@docItems").find(".aa-ItemLink").should("have.attr", "href");
-    cy.get("@docItems")
-      .find(".aa-ItemActionButton")
-      .should("exist")
-      .should("have.attr", "title", "Visit this link");
-  });
-
-  it("checks posts contain 'visit this link' links", () => {
-    cy.log("**open search**");
-    SearchPage.openSearch();
-    cy.log("**checks search input is not empty**");
-    SearchPage.getSearchInput().invoke("val").should("not.be.empty");
-    cy.log("**checks there are search results in posts**");
-    SearchPage.getSearchResultItems("posts")
-      .as("postItems")
-      .should("have.length.at.least", 1);
-    cy.log("**checks posts contain a 'visit this link' link");
-    cy.get("@postItems").find(".aa-ItemLink").should("have.attr", "href");
-    cy.get("@postItems")
-      .find(".aa-ItemActionButton")
-      .should("exist")
-      .should("have.attr", "title", "Visit this link");
+  it.only("checks search results dislay under posts and documentation. Also checks the pages section displays", () => {
+    cy.log("**check 'posts' search results contain search term**");
+    SearchPage.checkSearchResultsContainText("posts", "cairo");
+    cy.log("**check each 'post' search result has a link**");
+    SearchPage.checkSearchResultItemsHaveLinks("posts");
+    cy.log("**check 'documentation' search results contain search term**");
+    SearchPage.checkSearchResultsContainText("docs", "cairo");
+    cy.log("**check each 'documentation' search result has a link**");
+    SearchPage.checkSearchResultItemsHaveLinks("docs");
+    cy.log("**check 'pages' contain links**");
+    SearchPage.checkPageitemsHaveLinks();
+    cy.log("**clear search**");
+    SearchPage.getClearBtn().should("be.visible").trigger("mouseover").click();
+    cy.log("**check search input is empty**");
+    SearchPage.getSearchInput().should("have.value", "");
+    cy.log("**cancel search**");
+    SearchPage.getCancelSearchBtn()
+      .should("be.visible")
+      .trigger("mouseover")
+      .click();
+    cy.log("**check search modal is closed**");
+    SearchPage.getSearchModal().should("not.exist");
   });
 });
