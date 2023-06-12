@@ -3,11 +3,10 @@ import { PreviewTemplateComponentProps } from "netlify-cms-core";
 import { useWindowSize } from "./useWindowSize";
 import { convertStringTagsToArray } from "@starknet-io/cms-utils/src/index";
 
-const livePreviewHost = import.meta.env.VITE_LIVE_PREVIEW_HOST
-  ? import.meta.env.VITE_LIVE_PREVIEW_HOST
-  : import.meta.env.VITE_GIT_BRANCH_NAME === "production"
-  ? "https://www.starknet.io"
-  : "https://starknet-website-dev.vercel.app";
+const livePreviewHost =
+  import.meta.env.VITE_GIT_BRANCH_NAME === "production"
+    ? "https://www.starknet.io"
+    : import.meta.env.VITE_LIVE_PREVIEW_HOST;
 
 export enum CustomPreviewType {
   EVENTS = "EVENTS",
@@ -42,7 +41,7 @@ async function toDataURL(src: string) {
 
 export default function CustomPreview(props: CustomPreviewProps) {
   const ref = useRef<HTMLIFrameElement>(null);
-  const [refresh, setRefresh] = React.useState(false);
+  const [refresh, setRefresh] = React.useState(0);
   const { height } = useWindowSize();
   const { type, entry, getAsset } = props;
 
@@ -78,6 +77,18 @@ export default function CustomPreview(props: CustomPreviewProps) {
     sendDataToLivePreviewRendere();
   }, [type, entry, getAsset, refresh]);
 
+  useEffect(() => {
+    window.addEventListener(
+      "message",
+      function (message: MessageEvent<{ type: string }>) {
+        if (message.data.type == "preview-loaded") {
+          setRefresh((p) => p + 1);
+        }
+      },
+      false
+    );
+  }, []);
+
   return (
     <div>
       <iframe
@@ -87,11 +98,6 @@ export default function CustomPreview(props: CustomPreviewProps) {
         src={`${livePreviewHost}/live-preview?type=${props.type}`}
         title="Live preview"
         frameBorder="0"
-        onLoad={() => {
-          setTimeout(() => {
-            setRefresh((prev) => !prev);
-          }, 300);
-        }}
       ></iframe>
     </div>
   );
